@@ -73,7 +73,7 @@ func (r *Route2) UnmarshalJSON(data []byte) error {
 
 	r.Dst = net.IPNet(rt.Dst)
 	r.GW = rt.GW
-	r.Via = netlink.Destination(rt.Via)
+	r.Via = rt.Via
 	r.Src = rt.Src
 	return nil
 }
