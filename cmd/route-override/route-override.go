@@ -43,7 +43,7 @@ import (
 type Route2 struct {
 	Dst net.IPNet
 	GW  net.IP
-	Via net.IP
+	Via route.Destination
 	Src net.IP
 }
 
@@ -52,9 +52,9 @@ func (r *Route2) String() string {
 }
 
 type route2 struct {
-	Dst IPNet  `json:"dst"`
+	Dst net.IPNet  `json:"dst"`
 	GW  net.IP `json:"gw,omitempty"`
-	Via net.IP `json:"via,omitempty"`
+	Via route.Destination `json:"via,omitempty"`
 	Src net.IP `json:"src,omitempty"`
 }
 
@@ -66,14 +66,14 @@ func (r *Route2) UnmarshalJSON(data []byte) error {
 
 	r.Dst = net.IPNet(rt.Dst)
 	r.GW = rt.GW
-	r.Via = rt.Via
+	r.Via = route.Destination(rt.Via)
 	r.Src = rt.Src
 	return nil
 }
 
 func (r Route2) MarshalJSON() ([]byte, error) {
 	rt := route2{
-		Dst: IPNet(r.Dst),
+		Dst: net.IPNet(r.Dst),
 		GW:  r.GW,
 		Via: r.Via,
 		Src: r.Src,
