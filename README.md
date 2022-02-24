@@ -45,7 +45,9 @@ kubectl create -f deployments/daemonset-install.yaml
         "addroutes": [
         {
             "dst": "192.168.0.0/24",
-            "gw": "10.1.254.254"
+            "gw": "10.1.254.254",
+            "via": "192.168.0.1",
+            "src": "10.1.1.1"
         }]
     }
     ]
