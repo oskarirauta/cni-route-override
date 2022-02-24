@@ -38,6 +38,50 @@ import (
 // + only checko route/dst
 //go build ./cmd/route-override/
 
+// from containernetworking/cni/pkg/types
+
+type Route2 struct {
+	Dst net.IPNet
+	GW  net.IP
+	Via net.IP
+	Src net.IP
+}
+
+func (r *Route2) String() string {
+	return fmt.Sprintf("%+v", *r)
+}
+
+type route2 struct {
+	Dst IPNet  `json:"dst"`
+	GW  net.IP `json:"gw,omitempty"`
+	Via net.IP `json:"via,omitempty"`
+	Src net.IP `json:"src,omitempty"`
+}
+
+func (r *Route2) UnmarshalJSON(data []byte) error {
+	rt := route2{}
+	if err := json.Unmarshal(data, &rt); err != nil {
+		return err
+	}
+
+	r.Dst = net.IPNet(rt.Dst)
+	r.GW = rt.GW
+	r.Via = rt.Via
+	r.Src = rt.Src
+	return nil
+}
+
+func (r Route2) MarshalJSON() ([]byte, error) {
+	rt := route2{
+		Dst: IPNet(r.Dst),
+		GW:  r.GW,
+		Via: r.Via,
+		Src: r.Src,
+	}
+
+	return json.Marshal(rt)
+}
+
 // RouteOverrideConfig represents the network route-override configuration
 type RouteOverrideConfig struct {
 	types.NetConf
@@ -46,8 +90,8 @@ type RouteOverrideConfig struct {
 
 	FlushRoutes  bool           `json:"flushroutes,omitempty"`
 	FlushGateway bool           `json:"flushgateway,omitempty"`
-	DelRoutes    []*types.Route `json:"delroutes"`
-	AddRoutes    []*types.Route `json:"addroutes"`
+	DelRoutes    []*Route2      `json:"delroutes"`
+	AddRoutes    []*Route2      `json:"addroutes"`
 	SkipCheck    bool           `json:"skipcheck,omitempty"`
 
 	Args *struct {
@@ -59,8 +103,8 @@ type RouteOverrideConfig struct {
 type IPAMArgs struct {
 	FlushRoutes  *bool          `json:"flushroutes,omitempty"`
 	FlushGateway *bool          `json:"flushgateway,omitempty"`
-	DelRoutes    []*types.Route `json:"delroutes,omitempty"`
-	AddRoutes    []*types.Route `json:"addroutes,omitempty"`
+	DelRoutes    []*Route2      `json:"delroutes,omitempty"`
+	AddRoutes    []*Route2      `json:"addroutes,omitempty"`
 	SkipCheck    *bool          `json:"skipcheck,omitempty"`
 }
 
@@ -174,7 +218,7 @@ func deleteGWRoute(res *current.Result) error {
 	return err
 }
 
-func deleteRoute(route *types.Route, res *current.Result) error {
+func deleteRoute(route *Route2, res *current.Result) error {
 	var err error
 	// fallback to eth0 if there is no interface in result
 	if res.Interfaces == nil {
@@ -238,7 +282,7 @@ func deleteRoute(route *types.Route, res *current.Result) error {
 	return err
 }
 
-func addRoute(dev netlink.Link, route *types.Route) error {
+func addRoute(dev netlink.Link, route *Route2) error {
 	return netlink.RouteAdd(&netlink.Route{
 		LinkIndex: dev.Attrs().Index,
 		Scope:     netlink.SCOPE_UNIVERSE,
@@ -278,7 +322,7 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 		}
 	}
 
-	newRoutes := []*types.Route{}
+	newRoutes := []*Route2{}
 	err = netns.Do(func(_ ns.NetNS) error {
 		// Flush route if required
 		if !conf.FlushRoutes {
