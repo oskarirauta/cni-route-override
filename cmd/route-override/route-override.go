@@ -221,8 +221,8 @@ func deleteRoute(route *types.Route, res *current.Result) error {
 							mismatch = true
 						}
 
-						if ( nlroute.Src != nil && !nlroute.Src.IP.Equal(route.Src.IP)) ||
-						   ( nlroute.Src == nil && route.Src != nil )) {
+						if (( nlroute.Src != nil && !nlroute.Src.IP.Equal(route.Src.IP)) ||
+						    ( nlroute.Src == nil && route.Src != nil )) {
 							mismatch = true
 						}
 
