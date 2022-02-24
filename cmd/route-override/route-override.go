@@ -43,7 +43,7 @@ import (
 type Route2 struct {
 	Dst net.IPNet
 	GW  net.IP
-	Via route.Destination
+	Via netlink.Destination
 	Src net.IP
 }
 
@@ -51,10 +51,17 @@ func (r *Route2) String() string {
 	return fmt.Sprintf("%+v", *r)
 }
 
+func (r *Route2) Legacy() types.Route {
+	return types.Route{
+		Dst: r.Dst,
+		GW:  r.GW,
+	}
+}
+
 type route2 struct {
 	Dst net.IPNet  `json:"dst"`
 	GW  net.IP `json:"gw,omitempty"`
-	Via route.Destination `json:"via,omitempty"`
+	Via netlink.Destination `json:"via,omitempty"`
 	Src net.IP `json:"src,omitempty"`
 }
 
@@ -66,7 +73,7 @@ func (r *Route2) UnmarshalJSON(data []byte) error {
 
 	r.Dst = net.IPNet(rt.Dst)
 	r.GW = rt.GW
-	r.Via = route.Destination(rt.Via)
+	r.Via = netlink.Destination(rt.Via)
 	r.Src = rt.Src
 	return nil
 }
@@ -225,8 +232,6 @@ func deleteRoute(route *Route2, res *current.Result) error {
 		link, _ := netlink.LinkByName("eth0")
 		routes, _ := netlink.RouteList(link, netlink.FAMILY_ALL)
 		for _, nlroute := range routes {
-			var match bool
-			match = true
 			if nlroute.Dst != nil &&
 				nlroute.Dst.IP.Equal(route.Dst.IP) &&
 				nlroute.Dst.Mask.String() == route.Dst.Mask.String() {
@@ -288,8 +293,8 @@ func addRoute(dev netlink.Link, route *Route2) error {
 		Scope:     netlink.SCOPE_UNIVERSE,
 		Dst:       &route.Dst,
 		Gw:        route.GW,
-		Via:       &route.Via,
-		Src:       &route.Src,
+		Via:       route.Via,
+		Src:       route.Src,
 	})
 }
 
@@ -308,9 +313,9 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 	if conf.FlushGateway {
 		// add "0.0.0.0/0" into delRoute to remove it from routing table/result
 		_, gwRoute, _ := net.ParseCIDR("0.0.0.0/0")
-		conf.DelRoutes = append(conf.DelRoutes, &types.Route{Dst: *gwRoute})
+		conf.DelRoutes = append(conf.DelRoutes, &Route2{Dst: *gwRoute})
 		_, gwRoute, _ = net.ParseCIDR("::/0")
-		conf.DelRoutes = append(conf.DelRoutes, &types.Route{Dst: *gwRoute})
+		conf.DelRoutes = append(conf.DelRoutes, &Route2{Dst: *gwRoute})
 
 		// delete given gateway address
 		for _, ips := range res.IPs {
@@ -322,7 +327,8 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 		}
 	}
 
-	newRoutes := []*Route2{}
+	newRoutes := []*types.Route{}
+
 	err = netns.Do(func(_ ns.NetNS) error {
 		// Flush route if required
 		if !conf.FlushRoutes {
@@ -332,23 +338,9 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 					if route.Dst.IP.Equal(delroute.Dst.IP) &&
 						bytes.Equal(route.Dst.Mask, delroute.Dst.Mask) {
 
-						var mismatch bool
-
-						if (( route.Via != nil && !route.Via.Equal(delroute.Via)) ||
-						    ( route.Via == nil && delroute.Via != nil )) {
-							mismatch = true
-						}
-
-						if (( route.Src != nil && !route.Src.Equal(delroute.Src)) ||
-						    ( route.Src == nil && delroute.Via != nil )) {
-							mismatch = true
-						}
-
-						if ( !mismatch ) {
-							err = deleteRoute(delroute, res)
-							if err != nil {
-								fmt.Fprintf(os.Stderr, "failed to delete route %v: %v", delroute, err)
-							}
+						err = deleteRoute(delroute, res)
+						if err != nil {
+							fmt.Fprintf(os.Stderr, "failed to delete route %v: %v", delroute, err)
 						}
 
 						continue NEXT
@@ -376,7 +368,10 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 		// Add route
 		dev, _ := netlink.LinkByName(containerIFName)
 		for _, route := range conf.AddRoutes {
-			newRoutes = append(newRoutes, route)
+
+			legacyroute := route.Legacy()
+			newRoutes = append(newRoutes, &legacyroute)
+
 			if err := addRoute(dev, route); err != nil {
 				fmt.Fprintf(os.Stderr, "failed to add route: %v: %v", route, err)
 			}
