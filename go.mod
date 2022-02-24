@@ -8,7 +8,7 @@ require (
 	github.com/hpcloud/tail v1.0.1-0.20180514194441-a1dbeea552b7 // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
-	github.com/vishvananda/netlink v1.0.0
+	github.com/vishvananda/netlink v1.1.1-0.20220222181832-59bb5b4d56f5 // indirect
 	golang.org/x/net v0.0.0-20190320064053-1272bf9dcd53 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
