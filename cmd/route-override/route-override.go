@@ -287,10 +287,26 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 				for _, delroute := range conf.DelRoutes {
 					if route.Dst.IP.Equal(delroute.Dst.IP) &&
 						bytes.Equal(route.Dst.Mask, delroute.Dst.Mask) {
-						err = deleteRoute(delroute, res)
-						if err != nil {
-							fmt.Fprintf(os.Stderr, "failed to delete route %v: %v", delroute, err)
+
+						var mismatch bool
+
+						if (( route.Via != nil && !route.Via.IP.Equal(delroute.Via.IP)) ||
+						    ( route.Via == nil && delroute.Via != nil )) {
+							mismatch = true
 						}
+
+						if (( route.Src != nil && !route.Src.IP.Equal(delroute.Src.IP)) ||
+						    ( route.Src == nil && delroute.Via != nil )) {
+							mismatch = true
+						}
+
+						if ( !mismatch ) {
+							err = deleteRoute(delroute, res)
+							if err != nil {
+								fmt.Fprintf(os.Stderr, "failed to delete route %v: %v", delroute, err)
+							}
+						}
+
 						continue NEXT
 					}
 
