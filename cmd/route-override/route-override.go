@@ -181,10 +181,27 @@ func deleteRoute(route *types.Route, res *current.Result) error {
 		link, _ := netlink.LinkByName("eth0")
 		routes, _ := netlink.RouteList(link, netlink.FAMILY_ALL)
 		for _, nlroute := range routes {
+			var match bool
+			match = true
 			if nlroute.Dst != nil &&
 				nlroute.Dst.IP.Equal(route.Dst.IP) &&
 				nlroute.Dst.Mask.String() == route.Dst.Mask.String() {
-				err = netlink.RouteDel(&nlroute)
+
+				var mismatch bool
+
+				if (( nlroute.Via != nil && !nlroute.Via.IP.Equal(route.Via.IP)) ||
+				    ( nlroute.Via == nil && route.Via != nil )) {
+					mismatch = true
+				}
+
+				if (( nlroute.Src != nil && !nlroute.Src.IP.Equal(route.Src.IP)) ||
+				    ( nlroute.Src == nil && route.Src != nil )) {
+					mismatch = true
+				}
+
+				if ( !mismatch ) {
+					err = netlink.RouteDel(&nlroute)
+				}
 			}
 		}
 	} else {
@@ -196,7 +213,22 @@ func deleteRoute(route *types.Route, res *current.Result) error {
 					if nlroute.Dst != nil &&
 						nlroute.Dst.IP.Equal(route.Dst.IP) &&
 						nlroute.Dst.Mask.String() == route.Dst.Mask.String() {
-						err = netlink.RouteDel(&nlroute)
+
+						var mismatch bool
+
+						if (( nlroute.Via != nil && !nlroute.Via.IP.Equal(route.Via.IP)) ||
+						    ( nlroute.Via == nil && route.Via != nil )) {
+							mismatch = true
+						}
+
+						if ( nlroute.Src != nil && !nlroute.Src.IP.Equal(route.Src.IP)) ||
+						   ( nlroute.Src == nil && route.Src != nil )) {
+							mismatch = true
+						}
+
+						if ( !mismatch ) {
+							err = netlink.RouteDel(&nlroute)
+						}
 					}
 				}
 			}
@@ -212,6 +244,8 @@ func addRoute(dev netlink.Link, route *types.Route) error {
 		Scope:     netlink.SCOPE_UNIVERSE,
 		Dst:       &route.Dst,
 		Gw:        route.GW,
+		Via:       &route.Via,
+		Src:       &route.Src,
 	})
 }
 
