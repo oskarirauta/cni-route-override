@@ -125,6 +125,8 @@ type DNS struct {
 type Route struct {
 	Dst net.IPNet
 	GW  net.IP
+	Via net.IP
+	Src net.IP
 }
 
 func (r *Route) String() string {
@@ -164,6 +166,8 @@ func (e *Error) Print() error {
 type route struct {
 	Dst IPNet  `json:"dst"`
 	GW  net.IP `json:"gw,omitempty"`
+	Via net.IP `json:"via,omitempty"`
+	Src net.IP `json:"src,omitempty"`
 }
 
 func (r *Route) UnmarshalJSON(data []byte) error {
@@ -174,6 +178,8 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 
 	r.Dst = net.IPNet(rt.Dst)
 	r.GW = rt.GW
+	r.Via = rt.Via
+	r.Src = rt.Src
 	return nil
 }
 
@@ -181,6 +187,8 @@ func (r Route) MarshalJSON() ([]byte, error) {
 	rt := route{
 		Dst: IPNet(r.Dst),
 		GW:  r.GW,
+		Via: r.Via,
+		Src: r.Src,
 	}
 
 	return json.Marshal(rt)
