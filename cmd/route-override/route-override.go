@@ -189,12 +189,12 @@ func deleteRoute(route *types.Route, res *current.Result) error {
 
 				var mismatch bool
 
-				if (( nlroute.Via != nil && !nlroute.Via.IP.Equal(route.Via.IP)) ||
+				if (( nlroute.Via != nil && !nlroute.Via.Equal(route.Via)) ||
 				    ( nlroute.Via == nil && route.Via != nil )) {
 					mismatch = true
 				}
 
-				if (( nlroute.Src != nil && !nlroute.Src.IP.Equal(route.Src.IP)) ||
+				if (( nlroute.Src != nil && !nlroute.Src.Equal(route.Src)) ||
 				    ( nlroute.Src == nil && route.Src != nil )) {
 					mismatch = true
 				}
@@ -216,12 +216,12 @@ func deleteRoute(route *types.Route, res *current.Result) error {
 
 						var mismatch bool
 
-						if (( nlroute.Via != nil && !nlroute.Via.IP.Equal(route.Via.IP)) ||
+						if (( nlroute.Via != nil && !nlroute.Via.Equal(route.Via)) ||
 						    ( nlroute.Via == nil && route.Via != nil )) {
 							mismatch = true
 						}
 
-						if (( nlroute.Src != nil && !nlroute.Src.IP.Equal(route.Src.IP)) ||
+						if (( nlroute.Src != nil && !nlroute.Src.Equal(route.Src)) ||
 						    ( nlroute.Src == nil && route.Src != nil )) {
 							mismatch = true
 						}
@@ -290,12 +290,12 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 
 						var mismatch bool
 
-						if (( route.Via != nil && !route.Via.IP.Equal(delroute.Via.IP)) ||
+						if (( route.Via != nil && !route.Via.Equal(delroute.Via)) ||
 						    ( route.Via == nil && delroute.Via != nil )) {
 							mismatch = true
 						}
 
-						if (( route.Src != nil && !route.Src.IP.Equal(delroute.Src.IP)) ||
+						if (( route.Src != nil && !route.Src.Equal(delroute.Src)) ||
 						    ( route.Src == nil && delroute.Via != nil )) {
 							mismatch = true
 						}
