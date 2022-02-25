@@ -346,9 +346,16 @@ func addRoute(dev netlink.Link, route *route2) error {
 		Dst:		&dst,
 		Gw:		route.GW,
 		Src:		route.Src,
-		MultiPath:	multipath,
-		Via:		via,
+/*		MultiPath:	multipath,
+		Via:		via,*/
 	}
+
+	if ( via != nil ) {
+		newRoute.MultiPath = multipath
+		newRoute.Via = via
+	}
+
+
 /*
 	return netlink.RouteAdd(&netlink.Route{
 		LinkIndex: dev.Attrs().Index,
