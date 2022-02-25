@@ -43,7 +43,7 @@ import (
 type Route2 struct {
 	Dst net.IPNet
 	GW  net.IP
-	Via netlink.Destination
+	Via net.IP
 	Src net.IP
 }
 
@@ -60,9 +60,9 @@ func (r *Route2) Legacy() types.Route {
 
 type route2 struct {
 	Dst net.IPNet  `json:"dst"`
-	GW  net.IP `json:"gw,omitempty"`
-	Via netlink.Destination `json:"via,omitempty"`
-	Src net.IP `json:"src,omitempty"`
+	GW  net.IP     `json:"gw,omitempty"`
+	Via net.IP     `json:"via,omitempty"`
+	Src net.IP     `json:"src,omitempty"`
 }
 
 func (r *Route2) UnmarshalJSON(data []byte) error {
@@ -238,9 +238,16 @@ func deleteRoute(route *Route2, res *current.Result) error {
 
 				var mismatch bool
 
-				if (( nlroute.Via != nil && !nlroute.Via.Equal(route.Via)) ||
-				    ( nlroute.Via == nil && route.Via != nil )) {
-					mismatch = true
+				if ( route.Via != nil ) {
+
+					via := netlink.Via {
+						AddrFamily: netlink.FAMILY_V4,
+						Addr:       route.Via,
+					}
+
+					if (( nlroute.Via != nil && via.Equal(nlroute.Via)) || nlroute.Via == nil ) {
+						mismatch = true
+					}
 				}
 
 				if (( nlroute.Src != nil && !nlroute.Src.Equal(route.Src)) ||
@@ -265,9 +272,16 @@ func deleteRoute(route *Route2, res *current.Result) error {
 
 						var mismatch bool
 
-						if (( nlroute.Via != nil && !nlroute.Via.Equal(route.Via)) ||
-						    ( nlroute.Via == nil && route.Via != nil )) {
-							mismatch = true
+						if ( route.Via != nil ) {
+
+							via := netlink.Via {
+							AddrFamily: netlink.FAMILY_V4,
+							Addr:       route.Via,
+							}
+
+							if (( nlroute.Via != nil && via.Equal(nlroute.Via)) || nlroute.Via == nil ) {
+								mismatch = true
+							}
 						}
 
 						if (( nlroute.Src != nil && !nlroute.Src.Equal(route.Src)) ||
@@ -288,6 +302,39 @@ func deleteRoute(route *Route2, res *current.Result) error {
 }
 
 func addRoute(dev netlink.Link, route *Route2) error {
+
+	var multipath []*netlink.NexthopInfo
+	var via *netlink.Via
+	var via2 netlink.Via
+
+	if ( route.Via != nil ) {
+
+		via2 = netlink.Via {
+			AddrFamily: 	netlink.FAMILY_V4,
+			Addr:		route.Via,
+		}
+
+		via = &via2;
+
+		multipath = []*netlink.NexthopInfo {
+			{
+			LinkIndex: dev.Attrs().Index,
+			Via:	   via,
+			},
+		}
+
+	}
+
+	newRoute := &netlink.Route {
+		LinkIndex:	dev.Attrs().Index,
+		Scope:		netlink.SCOPE_UNIVERSE,
+		Dst:		&route.Dst,
+		Gw:		route.GW,
+		Src:		route.Src,
+		MultiPath:	multipath,
+		/*Via:		via,*/
+	}
+/*
 	return netlink.RouteAdd(&netlink.Route{
 		LinkIndex: dev.Attrs().Index,
 		Scope:     netlink.SCOPE_UNIVERSE,
@@ -296,6 +343,8 @@ func addRoute(dev netlink.Link, route *Route2) error {
 		Via:       route.Via,
 		Src:       route.Src,
 	})
+*/
+	return netlink.RouteAdd(newRoute)
 }
 
 func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result, error) {
