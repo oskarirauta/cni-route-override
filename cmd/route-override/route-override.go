@@ -312,7 +312,7 @@ func addRoute(dev netlink.Link, route *route2) error {
 
 	fmt.Fprintf(os.Stderr, "adding route index: %v, dst: %v, gw: %v, src: %v, via: %v", dev.Attrs().Index, route.Dst, route.GW, route.Src, route.Via)
 
-	var multipath []*netlink.NexthopInfo
+	//var multipath []*netlink.NexthopInfo
 	var via *netlink.Via
 	var via2 netlink.Via
 
@@ -328,14 +328,14 @@ func addRoute(dev netlink.Link, route *route2) error {
 		}
 
 		via = &via2;
-
+/*
 		multipath = []*netlink.NexthopInfo {
 			{
 			LinkIndex: dev.Attrs().Index,
 			Via:	   via,
 			},
 		}
-
+*/
 	}
 
 	dst := net.IPNet(route.Dst)
@@ -351,7 +351,7 @@ func addRoute(dev netlink.Link, route *route2) error {
 	}
 
 	if ( via != nil ) {
-		newRoute.MultiPath = multipath
+		//newRoute.MultiPath = multipath
 		newRoute.Via = via
 	}
 
