@@ -65,6 +65,13 @@ type route2 struct {
 	Src net.IP     `json:"src,omitempty"`
 }
 
+func (r *route2) Legacy() types.Route {
+	return types.Route{
+		Dst: r.Dst,
+		GW:  r.GW,
+	}
+}
+
 func (r *Route2) UnmarshalJSON(data []byte) error {
 	rt := route2{}
 	if err := json.Unmarshal(data, &rt); err != nil {
@@ -97,8 +104,8 @@ type RouteOverrideConfig struct {
 
 	FlushRoutes  bool           `json:"flushroutes,omitempty"`
 	FlushGateway bool           `json:"flushgateway,omitempty"`
-	DelRoutes    []*Route2      `json:"delroutes"`
-	AddRoutes    []*Route2      `json:"addroutes"`
+	DelRoutes    []*route2      `json:"delroutes"`
+	AddRoutes    []*route2      `json:"addroutes"`
 	SkipCheck    bool           `json:"skipcheck,omitempty"`
 
 	Args *struct {
@@ -110,8 +117,8 @@ type RouteOverrideConfig struct {
 type IPAMArgs struct {
 	FlushRoutes  *bool          `json:"flushroutes,omitempty"`
 	FlushGateway *bool          `json:"flushgateway,omitempty"`
-	DelRoutes    []*Route2      `json:"delroutes,omitempty"`
-	AddRoutes    []*Route2      `json:"addroutes,omitempty"`
+	DelRoutes    []*route2      `json:"delroutes,omitempty"`
+	AddRoutes    []*route2      `json:"addroutes,omitempty"`
 	SkipCheck    *bool          `json:"skipcheck,omitempty"`
 }
 
@@ -225,7 +232,7 @@ func deleteGWRoute(res *current.Result) error {
 	return err
 }
 
-func deleteRoute(route *Route2, res *current.Result) error {
+func deleteRoute(route *route2, res *current.Result) error {
 	var err error
 	// fallback to eth0 if there is no interface in result
 	if res.Interfaces == nil {
@@ -301,7 +308,7 @@ func deleteRoute(route *Route2, res *current.Result) error {
 	return err
 }
 
-func addRoute(dev netlink.Link, route *Route2) error {
+func addRoute(dev netlink.Link, route *route2) error {
 
 	var multipath []*netlink.NexthopInfo
 	var via *netlink.Via
@@ -362,9 +369,9 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 	if conf.FlushGateway {
 		// add "0.0.0.0/0" into delRoute to remove it from routing table/result
 		_, gwRoute, _ := net.ParseCIDR("0.0.0.0/0")
-		conf.DelRoutes = append(conf.DelRoutes, &Route2{Dst: *gwRoute})
+		conf.DelRoutes = append(conf.DelRoutes, &route2{Dst: *gwRoute})
 		_, gwRoute, _ = net.ParseCIDR("::/0")
-		conf.DelRoutes = append(conf.DelRoutes, &Route2{Dst: *gwRoute})
+		conf.DelRoutes = append(conf.DelRoutes, &route2{Dst: *gwRoute})
 
 		// delete given gateway address
 		for _, ips := range res.IPs {
