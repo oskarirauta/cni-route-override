@@ -310,6 +310,8 @@ func deleteRoute(route *route2, res *current.Result) error {
 
 func addRoute(dev netlink.Link, route *route2) error {
 
+	fmt.Fprintf(os.Stderr, "adding route dst: %v, gw: %v, src: %v, via: %v", route.Dst, route.GW, route.Src, route.Via)
+
 	var multipath []*netlink.NexthopInfo
 	var via *netlink.Via
 	var via2 netlink.Via
@@ -341,7 +343,7 @@ func addRoute(dev netlink.Link, route *route2) error {
 		Gw:		route.GW,
 		Src:		route.Src,
 		MultiPath:	multipath,
-		/*Via:		via,*/
+		Via:		via,
 	}
 /*
 	return netlink.RouteAdd(&netlink.Route{
