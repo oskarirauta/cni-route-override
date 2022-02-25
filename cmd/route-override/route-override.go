@@ -316,6 +316,10 @@ func addRoute(dev netlink.Link, route *route2) error {
 	var via *netlink.Via
 	var via2 netlink.Via
 
+	if err := netlink.LinkSetUp(dev); err != nil {
+		fmt.Fprintf(os.Stderr, "error bringing link up while adding route: %v", err)
+	}
+
 	if ( route.Via != nil ) {
 
 		via2 = netlink.Via {
@@ -355,6 +359,7 @@ func addRoute(dev netlink.Link, route *route2) error {
 		Src:       route.Src,
 	})
 */
+
 	return netlink.RouteAdd(newRoute)
 }
 
