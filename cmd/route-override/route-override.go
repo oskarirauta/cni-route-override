@@ -59,15 +59,15 @@ func (r *Route2) Legacy() types.Route {
 }
 
 type route2 struct {
-	Dst net.IPNet  `json:"dst"`
-	GW  net.IP     `json:"gw,omitempty"`
-	Via net.IP     `json:"via,omitempty"`
-	Src net.IP     `json:"src,omitempty"`
+	Dst types.IPNet `json:"dst"`
+	GW  net.IP      `json:"gw,omitempty"`
+	Via net.IP      `json:"via,omitempty"`
+	Src net.IP      `json:"src,omitempty"`
 }
 
 func (r *route2) Legacy() types.Route {
 	return types.Route{
-		Dst: r.Dst,
+		Dst: net.IPNet(r.Dst),
 		GW:  r.GW,
 	}
 }
@@ -87,7 +87,7 @@ func (r *Route2) UnmarshalJSON(data []byte) error {
 
 func (r Route2) MarshalJSON() ([]byte, error) {
 	rt := route2{
-		Dst: net.IPNet(r.Dst),
+		Dst: types.IPNet(r.Dst),
 		GW:  r.GW,
 		Via: r.Via,
 		Src: r.Src,
@@ -332,10 +332,12 @@ func addRoute(dev netlink.Link, route *route2) error {
 
 	}
 
+	dst := net.IPNet(route.Dst)
+
 	newRoute := &netlink.Route {
 		LinkIndex:	dev.Attrs().Index,
 		Scope:		netlink.SCOPE_UNIVERSE,
-		Dst:		&route.Dst,
+		Dst:		&dst,
 		Gw:		route.GW,
 		Src:		route.Src,
 		MultiPath:	multipath,
@@ -369,9 +371,17 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 	if conf.FlushGateway {
 		// add "0.0.0.0/0" into delRoute to remove it from routing table/result
 		_, gwRoute, _ := net.ParseCIDR("0.0.0.0/0")
-		conf.DelRoutes = append(conf.DelRoutes, &route2{Dst: *gwRoute})
+		gwRoute2 := types.IPNet{
+			IP:   gwRoute.IP,
+			Mask: gwRoute.Mask,
+		}
+		conf.DelRoutes = append(conf.DelRoutes, &route2{Dst: gwRoute2})
 		_, gwRoute, _ = net.ParseCIDR("::/0")
-		conf.DelRoutes = append(conf.DelRoutes, &route2{Dst: *gwRoute})
+		gwRoute3 := types.IPNet{
+			IP:   gwRoute.IP,
+			Mask: gwRoute.Mask,
+		}
+		conf.DelRoutes = append(conf.DelRoutes, &route2{Dst: gwRoute3})
 
 		// delete given gateway address
 		for _, ips := range res.IPs {
