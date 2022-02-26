@@ -44,11 +44,11 @@ type RouteOverrideConfig struct {
 
 	PrevResult *current.Result `json:"-"`
 
-	FlushRoutes  bool           `json:"flushroutes,omitempty"`
-	FlushGateway bool           `json:"flushgateway,omitempty"`
+	FlushRoutes  bool      `json:"flushroutes,omitempty"`
+	FlushGateway bool      `json:"flushgateway,omitempty"`
 	DelRoutes    []*route2 `json:"delroutes"`
-	AddRoutes    []*types.Route `json:"addroutes"`
-	SkipCheck    bool           `json:"skipcheck,omitempty"`
+	AddRoutes    []*route2 `json:"addroutes"`
+	SkipCheck    bool      `json:"skipcheck,omitempty"`
 
 	Args *struct {
 		A *IPAMArgs `json:"cni"`
@@ -57,11 +57,11 @@ type RouteOverrideConfig struct {
 
 // IPAMArgs represents CNI argument conventions for the plugin
 type IPAMArgs struct {
-	FlushRoutes  *bool          `json:"flushroutes,omitempty"`
-	FlushGateway *bool          `json:"flushgateway,omitempty"`
-	DelRoutes    []*route2      `json:"delroutes,omitempty"`
-	AddRoutes    []*types.Route `json:"addroutes,omitempty"`
-	SkipCheck    *bool          `json:"skipcheck,omitempty"`
+	FlushRoutes  *bool     `json:"flushroutes,omitempty"`
+	FlushGateway *bool     `json:"flushgateway,omitempty"`
+	DelRoutes    []*route2 `json:"delroutes,omitempty"`
+	AddRoutes    []*route2 `json:"addroutes,omitempty"`
+	SkipCheck    *bool     `json:"skipcheck,omitempty"`
 }
 
 /*
@@ -276,12 +276,16 @@ func deleteRoute(route *route2, res *current.Result) error {
 	return err
 }
 
-func addRoute(dev netlink.Link, route *types.Route) error {
+func addRoute(dev netlink.Link, route *route2) error {
+
+	dst := net.IPNet(route.Dst)
+
 	return netlink.RouteAdd(&netlink.Route{
 		LinkIndex: dev.Attrs().Index,
 		Scope:     netlink.SCOPE_UNIVERSE,
-		Dst:       &route.Dst,
+		Dst:       &dst,
 		Gw:        route.GW,
+		Src:       route.Src,
 	})
 }
 
@@ -352,7 +356,7 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 		// Add route
 		dev, _ := netlink.LinkByName(containerIFName)
 		for _, route := range conf.AddRoutes {
-			newRoutes = append(newRoutes, route)
+			newRoutes = append(newRoutes, &types.Route{Dst: net.IPNet(route.Dst), GW: route.GW})
 			if err := addRoute(dev, route); err != nil {
 				fmt.Fprintf(os.Stderr, "failed to add route: %v: %v", route, err)
 			}
