@@ -28,11 +28,12 @@ import (
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/plugins/pkg/ns"
+	current "github.com/containernetworking/cni/pkg/types/100"
 
 	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netlink/nl"
 	"github.com/greenpau/versioned"
 )
 
@@ -293,7 +294,8 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 
 		// delete given gateway address
 		for _, ips := range res.IPs {
-			if ips.Version == "6" {
+			family := nl.GetIPFamily(ips.Address.IP)
+			if family == netlink.FAMILY_V6 {
 				ips.Gateway = net.IPv6zero
 			} else {
 				ips.Gateway = net.IPv4zero
