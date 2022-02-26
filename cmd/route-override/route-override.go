@@ -219,6 +219,7 @@ func deleteRoute(route *route2, res *current.Result) error {
 			}
 
 			if ( !mismatch ) {
+				fmt.Fprintf(os.Stderr, "deleting route with nil ifd, src: %v\n", route.Src)
 				err = netlink.RouteDel(&nlroute)
 			}
 
@@ -249,6 +250,7 @@ func deleteRoute(route *route2, res *current.Result) error {
 
 
 					if ( !mismatch ) {
+						fmt.Fprintf(os.Stderr, "deleting route with src: %v\n", route.Src)
 						err = netlink.RouteDel(&nlroute)
 					}
 
