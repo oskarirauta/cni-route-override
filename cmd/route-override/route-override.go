@@ -85,7 +85,7 @@ type RouteOverrideArgs struct {
 type route2 struct {
 	Dst types.IPNet `json:"dst"`
 	GW  net.IP      `json:"dst,omitempty"`
-        Src net.IP      `json:"dst,omitempty"`
+        Src net.IP      `json:"src,omitempty"`
 }
 
 func parseConf(data []byte, envArgs string) (*RouteOverrideConfig, error) {
