@@ -70,38 +70,10 @@ type RouteOverrideArgs struct {
 }
 */
 
-type Route2 struct {
-	Dst net.IPNet
-	GW  net.IP
-	Src net.IP
-}
-
 type route2 struct {
 	Dst types.IPNet `json:"dst"`
 	GW  net.IP      `json:"dst,omitempty"`
         Src net.IP      `json:"dst,omitempty"`
-}
-
-func (r *Route2) UnmarshalJSON(data []byte) error {
-	rt := route2{}
-	if err := json.Unmarshal(data, &rt); err != nil {
-		return err
-	}
-
-	r.Dst = net.IPNet(rt.Dst)
-	r.GW = rt.GW
-	r.Src = rt.Src
-	return nil
-}
-
-func (r Route2) MarshalJSON() ([]byte, error) {
-	rt := route2{
-		Dst: types.IPNet(r.Dst),
-		GW:  r.GW,
-		Src: r.Src,
-	}
-
-	return json.Marshal(rt)
 }
 
 func parseConf(data []byte, envArgs string) (*RouteOverrideConfig, error) {
