@@ -19,6 +19,7 @@
 package main
 
 import (
+	"flag"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -32,6 +33,16 @@ import (
 	"github.com/containernetworking/plugins/pkg/ns"
 
 	"github.com/vishvananda/netlink"
+	"github.com/greenpau/versioned"
+)
+
+var (
+	app        *versioned.PackageManager
+	appVersion string
+	gitBranch  string
+	gitCommit  string
+	buildUser  string
+	buildDate  string
 )
 
 // Todo:
@@ -451,7 +462,44 @@ func cmdCheck(args *skel.CmdArgs) error {
 	return err
 }
 
+func init() {
+	app = versioned.NewPackageManager("cni-route-override")
+	app.Description = "CNI netlink route overriding plugin"
+	app.Documentation = "https://github.com/oskarirauta/cni-route-override/"
+	app.SetVersion(appVersion, "0.2")
+	app.SetGitBranch(gitBranch, "")
+	app.SetGitCommit(gitCommit, "")
+	app.SetBuildUser(buildUser, "")
+	app.SetBuildDate(buildDate, "")
+}
+
 func main() {
-	// TODO: implement plugin version
-	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.All, "TODO")
+
+	var isShowVersion bool
+
+	flag.BoolVar(&isShowVersion, "version", false, "version information")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "\n%s - %s\n\n", app.Name, app.Description)
+		fmt.Fprintf(os.Stderr, "Usage: %s [arguments]\n\n", app.Name)
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\nDocumentation: %s\n\n", app.Documentation)
+	}
+
+	flag.Parse()
+
+	if isShowVersion {
+		fmt.Fprintf(os.Stdout, "%s\n", app.Banner())
+		os.Exit(0)
+	}
+
+	skel.PluginMain(
+		cmdAdd,
+		cmdCheck,
+		cmdDel,
+		version.All,
+		fmt.Sprintf("CNI %s plugin %s", app.Name, app.Version),
+	)
+
+	os.Exit(0)
 }

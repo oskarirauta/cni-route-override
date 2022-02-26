@@ -9,6 +9,7 @@ require (
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/vishvananda/netlink v1.1.1-0.20220222181832-59bb5b4d56f5 // indirect
+	github.com/greenpau/versioned v1.0.27
 	golang.org/x/net v0.0.0-20190320064053-1272bf9dcd53 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
