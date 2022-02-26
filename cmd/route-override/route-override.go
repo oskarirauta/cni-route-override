@@ -84,7 +84,7 @@ type RouteOverrideArgs struct {
 
 type route2 struct {
 	Dst types.IPNet `json:"dst"`
-	GW  net.IP      `json:"dst,omitempty"`
+	GW  net.IP      `json:"gw,omitempty"`
         Src net.IP      `json:"src,omitempty"`
 }
 
