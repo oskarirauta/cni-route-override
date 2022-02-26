@@ -346,7 +346,7 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 		dev, _ := netlink.LinkByName(containerIFName)
 		for _, route := range conf.AddRoutes {
 			newRoutes = append(newRoutes, &types.Route{Dst: net.IPNet(route.Dst), GW: route.GW})
-			err = deleteRoute(route2{Dst: route.Dst, GW:route.GW})
+			err = deleteRoute(route2{Dst: route.Dst, GW:route.GW}, res)
 			if err := addRoute(dev, route); err != nil {
 				fmt.Fprintf(os.Stderr, "failed to add route: %v: %v", route, err)
 			}
