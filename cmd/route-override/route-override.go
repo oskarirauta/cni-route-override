@@ -46,7 +46,7 @@ type RouteOverrideConfig struct {
 
 	FlushRoutes  bool           `json:"flushroutes,omitempty"`
 	FlushGateway bool           `json:"flushgateway,omitempty"`
-	DelRoutes    []*types.Route `json:"delroutes"`
+	DelRoutes    []*route2 `json:"delroutes"`
 	AddRoutes    []*types.Route `json:"addroutes"`
 	SkipCheck    bool           `json:"skipcheck,omitempty"`
 
@@ -59,7 +59,7 @@ type RouteOverrideConfig struct {
 type IPAMArgs struct {
 	FlushRoutes  *bool          `json:"flushroutes,omitempty"`
 	FlushGateway *bool          `json:"flushgateway,omitempty"`
-	DelRoutes    []*types.Route `json:"delroutes,omitempty"`
+	DelRoutes    []*route2      `json:"delroutes,omitempty"`
 	AddRoutes    []*types.Route `json:"addroutes,omitempty"`
 	SkipCheck    *bool          `json:"skipcheck,omitempty"`
 }
@@ -209,18 +209,35 @@ func deleteGWRoute(res *current.Result) error {
 	return err
 }
 
-func deleteRoute(route *types.Route, res *current.Result) error {
+func deleteRoute(route *route2, res *current.Result) error {
 	var err error
 	// fallback to eth0 if there is no interface in result
 	if res.Interfaces == nil {
 		link, _ := netlink.LinkByName("eth0")
 		routes, _ := netlink.RouteList(link, netlink.FAMILY_ALL)
 		for _, nlroute := range routes {
-			if nlroute.Dst != nil &&
-				nlroute.Dst.IP.Equal(route.Dst.IP) &&
-				nlroute.Dst.Mask.String() == route.Dst.Mask.String() {
+
+			var mismatch bool
+
+			if (( nlroute.Gw != nil && ( route.GW != nil && nlroute.Gw.Equal(route.GW))) ||
+			    ( nlroute.Gw == nil && route.GW != nil )) {
+				mismatch = true
+			}
+
+			if (( nlroute.Src != nil && ( route.Src != nil && nlroute.Gw.Equal(route.Src))) ||
+			    ( nlroute.Src == nil && route.Src != nil )) {
+				mismatch = true
+			}
+
+			if (( nlroute.Dst != nil &&
+			    ( !nlroute.Dst.IP.Equal(route.Dst.IP) || nlroute.Dst.Mask.String() != route.Dst.Mask.String()))) {
+				mismatch = true
+			}
+
+			if ( !mismatch ) {
 				err = netlink.RouteDel(&nlroute)
 			}
+
 		}
 	} else {
 		for _, netif := range res.Interfaces {
@@ -228,13 +245,31 @@ func deleteRoute(route *types.Route, res *current.Result) error {
 				link, _ := netlink.LinkByName(netif.Name)
 				routes, _ := netlink.RouteList(link, netlink.FAMILY_ALL)
 				for _, nlroute := range routes {
-					if nlroute.Dst != nil &&
-						nlroute.Dst.IP.Equal(route.Dst.IP) &&
-						nlroute.Dst.Mask.String() == route.Dst.Mask.String() {
+
+					var mismatch bool
+
+					if (( nlroute.Gw != nil && ( route.GW != nil && nlroute.Gw.Equal(route.GW))) ||
+					    ( nlroute.Gw == nil && route.GW != nil )) {
+						mismatch = true
+					}
+
+					if (( nlroute.Src != nil && ( route.Src != nil && nlroute.Src.Equal(route.Src))) ||
+					    ( nlroute.Src == nil && route.Src != nil )) {
+						mismatch = true
+					}
+
+					if (( nlroute.Dst != nil &&
+					    ( !nlroute.Dst.IP.Equal(route.Dst.IP) || nlroute.Dst.Mask.String() != route.Dst.Mask.String()))) {
+						mismatch = true
+					}
+
+
+					if ( !mismatch ) {
 						err = netlink.RouteDel(&nlroute)
 					}
+
 				}
-			}
+                        }
 		}
 	}
 
@@ -265,9 +300,9 @@ func processRoutes(netnsname string, conf *RouteOverrideConfig) (*current.Result
 	if conf.FlushGateway {
 		// add "0.0.0.0/0" into delRoute to remove it from routing table/result
 		_, gwRoute, _ := net.ParseCIDR("0.0.0.0/0")
-		conf.DelRoutes = append(conf.DelRoutes, &types.Route{Dst: *gwRoute})
+		conf.DelRoutes = append(conf.DelRoutes, &route2{Dst: types.IPNet{IP: gwRoute.IP, Mask: gwRoute.Mask}})
 		_, gwRoute, _ = net.ParseCIDR("::/0")
-		conf.DelRoutes = append(conf.DelRoutes, &types.Route{Dst: *gwRoute})
+		conf.DelRoutes = append(conf.DelRoutes, &route2{Dst: types.IPNet{IP: gwRoute.IP, Mask: gwRoute.Mask}})
 
 		// delete given gateway address
 		for _, ips := range res.IPs {
