@@ -262,6 +262,8 @@ func deleteRoute(route *route2, res *current.Result) error {
 
 func addRoute(dev netlink.Link, route *route2) error {
 
+	fmt.Fprintf(os.Stderr, "adding route index: %v, dst: %v, gw: %v, src: %v", dev.Attrs().Index, route.Dst, route.GW, route.Src)
+
 	dst := net.IPNet(route.Dst)
 
 	return netlink.RouteAdd(&netlink.Route{
