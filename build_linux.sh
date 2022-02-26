@@ -6,7 +6,7 @@ if [ "$(uname)" == "Darwin" ]; then
 	export GOOS="${GOOS:-linux}"
 fi
 
-ORG_PATH="github.com/redhat-nfvpe"
+ORG_PATH="github.com/oskarirauta"
 export REPO_PATH="${ORG_PATH}/cni-route-override"
 
 if [ ! -h gopath/src/${REPO_PATH} ]; then
